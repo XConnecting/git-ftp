@@ -40,6 +40,7 @@ import optparse
 import logging
 import textwrap
 
+import re
 import mox
 
 # Note about Tree.path/Blob.path: *real* Git trees and blobs don't
@@ -256,10 +257,15 @@ def upload_diff(repo, oldtree, tree, ftp, base):
 
     """
     diff = repo.git.diff("--name-status", oldtree.hexsha, tree.hexsha).split("\n")
+    ignoreFiles = loadFtpignore()
     for line in diff:
         if not line: continue
         status, file = line.split("\t", 1)
         assert status in ['A', 'D', 'M']
+
+        if ignore(file, ignoreFiles):
+            logging.info('Skipped ' + file)
+            continue
 
         if status == "D":
             try:
@@ -362,6 +368,24 @@ def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
         if retries < 0:
             raise IOError('Wrong user input.')
         print complaint
+
+def loadFtpignore(ftpignorePath = '.git/ftpignore'):
+    if os.path.isfile(ftpignorePath):
+        logging.info("Using " + ftpignorePath)
+    f = open(ftpignorePath, 'r')
+    lines = []
+    for line in f:
+        if line[-1] == '\n':
+            lines.append(line[:-1])
+        else:
+            lines.append(line)
+    return lines
+
+def ignore(targetPath, ignoreLines):
+    for line in ignoreLines:
+        if re.match('^' + line, targetPath) is not None :
+            return True
+    return False
 
 if __name__ == "__main__":
     main()
