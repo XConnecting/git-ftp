@@ -40,6 +40,8 @@ import optparse
 import logging
 import textwrap
 
+import mox
+
 # Note about Tree.path/Blob.path: *real* Git trees and blobs don't
 # actually provide path information, but the git-python bindings, as a
 # convenience keep track of this if you access the blob from an index.
@@ -76,13 +78,19 @@ def main():
     tree   = commit.tree
     if options.ftp.ssl:
         if hasattr(ftplib, 'FTP_TLS'): # SSL new in 2.7+
-            ftp = ftplib.FTP_TLS(options.ftp.hostname, options.ftp.username, options.ftp.password)
+            if options.dry:
+                ftp = mox.MockObject(ftplib.FTP_TLS)
+            else:
+                ftp = ftplib.FTP_TLS(options.ftp.hostname, options.ftp.username, options.ftp.password)
             ftp.prot_p()
             logging.info("Using SSL")
         else:
             raise FtpSslNotSupported("Python is too old for FTP SSL. Try using Python 2.7 or later.")
     else:
-        ftp = ftplib.FTP(options.ftp.hostname, options.ftp.username, options.ftp.password)
+        if options.dry:
+            ftp = mox.MockObject(ftplib.FTP)
+        else:
+            ftp = ftplib.FTP(options.ftp.hostname, options.ftp.username, options.ftp.password)
     ftp.cwd(base)
 
     # Check revision
@@ -127,6 +135,8 @@ def parse_args():
             help="use this branch instead of the active one")
     parser.add_option('-c', '--commit', dest="commit", default=None,
             help="use this commit instead of HEAD")
+    parser.add_option('-d', '--dry-run', dest="dry", action="store_true", default=False,
+            help="dry run")
     options, args = parser.parse_args()
     configure_logging(options)
     if len(args) > 1:
