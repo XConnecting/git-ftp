@@ -1,3 +1,19 @@
+Development Note
+------------
+
+This is a development branch forked from [ezyang's git-ftp](https://github.com/ezyang/git-ftp). 
+
+The functionalities added are:
+
+- Dry Run
+- FTP ignore
+
+Requirements: [pymox](http://code.google.com/p/pymox/)  
+it can be installed with `easy_install mox`
+
+Notice that the implementation is very quick and dirty; and not well tested.
+
+
 git-ftp.py: quick and efficient publishing of Git repositories over FTP
 =======================================================================
 
